@@ -8,7 +8,7 @@ from linebot.exceptions import (
     InvalidSignatureError
 )
 from linebot.models import *
-from datetime import datetime
+import datetime
 
 app = Flask(__name__)
 
