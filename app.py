@@ -82,6 +82,7 @@ def handle_message(event):
                 if is_night_report_content_empty(message_split_parts):
                     handle_night_report(event, msg, display_soldier_name)
                     soldier = get_soldier_by_soldier_id(soldier_id)
+                    # 檢查回報完的資料
                     all_report_text = get_text_report_of_general(NIGHT_REPORT_NUMBER, soldier)
                     bot_reply_message(event, all_report_text)
                 else:
@@ -177,7 +178,6 @@ def handle_night_report(event, msg, display_soldier_name):
     message_split_parts = msg.split('\n')
     soldier_id = display_soldier_name[0:3]
     location = message_split_parts[1]
-    # 晚間回報時 若是只打一個 會出現IndexError: list index out of range
     after_ten_location = message_split_parts[2]
     body_temperature = ''
     symptom = '無'
@@ -193,7 +193,7 @@ def handle_night_report(event, msg, display_soldier_name):
     elif len(message_split_parts) == 5:
         body_temperature = message_split_parts[3]
         symptom = message_split_parts[4]
-    start_report(event, MORNING_REPORT_NUMBER, soldier_id, location, after_ten_location, str(body_temperature),
+    start_report(event, NIGHT_REPORT_NUMBER, soldier_id, location, after_ten_location, str(body_temperature),
                  str(symptom))
 
 
