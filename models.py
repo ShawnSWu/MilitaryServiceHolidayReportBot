@@ -75,8 +75,9 @@ def get_report_type_by_id(report_type_id):
     return session.query(ReportType).filter_by(id=report_type_id).first()
 
 
-def get_soldier(soldier_id):
-    return session.query(Soldier).filter_by(soldier_id=soldier_id).first()
+def get_soldier_by_soldier_id(soldier_id):
+    standardized_soldier_id = ('12{}'.format(soldier_id))
+    return session.query(Soldier).filter_by(soldier_id=standardized_soldier_id).first()
 
 
 def report(report_type_id, soldier_id, location, location_after_ten, body_temperature, symptom):
@@ -102,3 +103,7 @@ def report(report_type_id, soldier_id, location, location_after_ten, body_temper
         session.close()
 
 
+def get_report_history_by_date_and_report_type_and_class_number(date, report_type_id, soldier_class_number):
+    return session.query(ReportHistory).filter_by(report_date=date,
+                                               report_type_id=report_type_id).join(Soldier).filter(
+            Soldier.class_number == soldier_class_number).all()
