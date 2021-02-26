@@ -1,9 +1,9 @@
 import datetime
 from sqlalchemy import Column, Integer, String, ForeignKey, TIME, DATE
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, backref
+from sqlalchemy.orm import sessionmaker, backref, relationship
 from sqlalchemy import create_engine
-from sqlalchemy.orm import relationship
+from sqlalchemy.exc import OperationalError
 from app import database_url
 
 engine = create_engine(database_url, echo=False, pool_timeout=20, pool_recycle=299)
@@ -13,6 +13,7 @@ session = Session()
 
 Base = declarative_base()
 
+REPORT_FAILURE_BY_LOSS_CONNECTION = -1
 
 class Soldier(Base):
     __tablename__ = "soldier"
@@ -96,9 +97,9 @@ def report(report_type_id, soldier_id, location, location_after_ten, body_temper
         report_history.symptom = symptom
         session.commit()
         session.close()
-    except Exception as e:
+    except OperationalError as e:
         session.rollback()
-        raise e
+        return REPORT_FAILURE_BY_LOSS_CONNECTION
     finally:
         session.close()
 

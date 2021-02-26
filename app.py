@@ -35,6 +35,7 @@ NIGHT_BODY_TEMPERATURE_NUMBER = 5
 REPORT_CONTENT_ERROR = '回報內容不符合現在回報的格式，請重新回報'
 WRONG_REPORT_TIME = '現在不是回報時間\n 上午回報時間:1000-1300\n下午回報時間:1800-2100'
 WRONG_USER_NAME = "回報時請將三碼學號打在名字前面，再做回報\n範例：001-王大明"
+SERVER_EXCEPTION_PLZ_TRY_AGAIN = '伺服器剛剛恍神，重新回報看看'
 
 
 @app.route("/callback", methods=['POST'])
@@ -63,7 +64,7 @@ def handle_message(event):
         message_split_parts = msg.split('\n')
 
         if is_body_temperature_report_format_correct(message_split_parts[0]):
-            handle_body_temperature_report(msg, display_soldier_name)
+            handle_body_temperature_report(event, msg, display_soldier_name)
             soldier = get_soldier_by_soldier_id(soldier_id)
             body_temperature_report_type = get_body_temperature_report_type_of_current_time()
             all_report_text = get_text_report_of_body_temperature(body_temperature_report_type, soldier)
@@ -71,7 +72,7 @@ def handle_message(event):
         elif is_normal_report_format_correct(message_split_parts[0]):
             if is_morning_report():
                 if is_morning_report_content_empty(message_split_parts):
-                    handle_morning_report(msg, display_soldier_name)
+                    handle_morning_report(event, msg, display_soldier_name)
                     soldier = get_soldier_by_soldier_id(soldier_id)
                     all_report_text = get_text_report_of_general(MORNING_REPORT_NUMBER, soldier)
                     bot_reply_message(event, all_report_text)
@@ -79,7 +80,7 @@ def handle_message(event):
                     bot_reply_message(event, REPORT_CONTENT_ERROR)
             elif is_night_report():
                 if is_morning_report_content_empty(message_split_parts):
-                    handle_night_report(msg, display_soldier_name)
+                    handle_night_report(event, msg, display_soldier_name)
                     soldier = get_soldier_by_soldier_id(soldier_id)
                     all_report_text = get_text_report_of_general(NIGHT_REPORT_NUMBER, soldier)
                     bot_reply_message(event, all_report_text)
@@ -104,7 +105,7 @@ def is_user_name_format_correct(display_soldier_name):
     return soldier_id.isnumeric()
 
 
-def handle_morning_report(msg, display_soldier_name):
+def handle_morning_report(event, msg, display_soldier_name):
     message_split_parts = msg.split('\n')
     soldier_id = display_soldier_name[0:3]
     location = message_split_parts[1]
@@ -126,10 +127,10 @@ def handle_morning_report(msg, display_soldier_name):
     elif len(message_split_parts) == 4:
         body_temperature = message_split_parts[2]
         symptom = message_split_parts[3]
-    report(MORNING_REPORT_NUMBER, soldier_id, location, None, str(body_temperature), str(symptom))
+    start_report(event, MORNING_REPORT_NUMBER, soldier_id, location, None, str(body_temperature), str(symptom))
 
 
-def handle_body_temperature_report(msg, display_soldier_name):
+def handle_body_temperature_report(event, msg, display_soldier_name):
     message_split_parts = msg.split('\n')
     soldier_id = display_soldier_name[0:3]
     body_temperature = ''
@@ -148,7 +149,7 @@ def handle_body_temperature_report(msg, display_soldier_name):
         body_temperature = generate_random_normal_body_temperature()
 
     body_temperature_report_type = get_body_temperature_report_type_of_current_time()
-    report(body_temperature_report_type, soldier_id, None, None, str(body_temperature), str(symptom))
+    start_report(event, body_temperature_report_type, soldier_id, None, None, str(body_temperature), str(symptom))
 
 
 def is_text_body_temperature(text):
@@ -172,7 +173,7 @@ def get_body_temperature_report_type_of_current_time():
     return body_temperature_report_type
 
 
-def handle_night_report(msg, display_soldier_name):
+def handle_night_report(event, msg, display_soldier_name):
     message_split_parts = msg.split('\n')
     soldier_id = display_soldier_name[0:3]
     location = message_split_parts[1]
@@ -191,7 +192,14 @@ def handle_night_report(msg, display_soldier_name):
     elif len(message_split_parts) == 5:
         body_temperature = message_split_parts[3]
         symptom = message_split_parts[4]
-    report(MORNING_REPORT_NUMBER, soldier_id, location, after_ten_location, str(body_temperature), str(symptom))
+    start_report(event, MORNING_REPORT_NUMBER, soldier_id, location, after_ten_location, str(body_temperature),
+                 str(symptom))
+
+
+def start_report(event, report_type, soldier_id, location, after_ten_location, body_temperature, symptom):
+    report_result = report(report_type, soldier_id, location, after_ten_location, str(body_temperature), str(symptom))
+    if report_result == REPORT_FAILURE_BY_LOSS_CONNECTION:
+        bot_reply_message(event, SERVER_EXCEPTION_PLZ_TRY_AGAIN)
 
 
 def generate_random_normal_body_temperature():
