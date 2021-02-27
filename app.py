@@ -74,7 +74,7 @@ def handle_message(event):
                 if is_morning_report_content_empty(message_split_parts):
                     handle_morning_report(event, msg, display_soldier_name)
                     soldier = get_soldier_by_soldier_id(soldier_id)
-                    all_report_text = get_text_report_of_general(MORNING_REPORT_NUMBER, soldier)
+                    all_report_text = get_text_report_of_morning(MORNING_REPORT_NUMBER, soldier)
                     bot_reply_message(event, all_report_text)
                 else:
                     bot_reply_message(event, REPORT_CONTENT_ERROR)
@@ -82,8 +82,7 @@ def handle_message(event):
                 if is_night_report_content_empty(message_split_parts):
                     handle_night_report(event, msg, display_soldier_name)
                     soldier = get_soldier_by_soldier_id(soldier_id)
-                    # 檢查回報完的資料
-                    all_report_text = get_text_report_of_general(NIGHT_REPORT_NUMBER, soldier)
+                    all_report_text = get_text_report_of_night(NIGHT_REPORT_NUMBER, soldier)
                     bot_reply_message(event, all_report_text)
                 else:
                     bot_reply_message(event, REPORT_CONTENT_ERROR)
@@ -239,7 +238,7 @@ def is_night_report():
     return 180000 < now_time < 210000
 
 
-def get_text_report_of_general(report_type_id, soldier):
+def get_text_report_of_morning(report_type_id, soldier):
     today = datetime.date.today()
     reports_history = get_report_history_by_date_and_report_type_and_class_number(today, report_type_id,
                                                                                   soldier.class_number)
@@ -248,13 +247,35 @@ def get_text_report_of_general(report_type_id, soldier):
                                                                 type_name=report_type.type_name)
     all_report_text = ''
     for report in reports_history:
-        personal_report_text = "\n姓名：{name}\n" \
+        personal_report_text = "姓名：{name}\n" \
                                "學號：{soldier_id}\n" \
                                "手機：{phone}\n" \
                                "地點：{location}\n\n".format(name=report.soldier.name,
                                                           soldier_id=report.soldier.soldier_id,
                                                           phone=report.soldier.phone,
                                                           location=report.location)
+        all_report_text += personal_report_text
+    return report_title + all_report_text
+
+
+def get_text_report_of_night(report_type_id, soldier):
+    today = datetime.date.today()
+    reports_history = get_report_history_by_date_and_report_type_and_class_number(today, report_type_id,
+                                                                                  soldier.class_number)
+    report_type = get_report_type_by_id(report_type_id)
+    report_title = '{report_time_period}{type_name}\n\n'.format(report_time_period=report_type.report_time_period,
+                                                                type_name=report_type.type_name)
+    all_report_text = ''
+    for report in reports_history:
+        personal_report_text = "姓名：{name}\n" \
+                               "學號：{soldier_id}\n" \
+                               "手機：{phone}\n" \
+                               "地點：{location}\n" \
+                               "2200後地點：{location_after_ten}\n\n".format(name=report.soldier.name,
+                                                                         soldier_id=report.soldier.soldier_id,
+                                                                         phone=report.soldier.phone,
+                                                                         location=report.location,
+                                                                         location_after_ten=report.location_after_ten)
         all_report_text += personal_report_text
     return report_title + all_report_text
 
